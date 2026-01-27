@@ -14,3 +14,9 @@
 *.log
 output/*
 !output/.gitkeep
+
+# Backup and old files
+old_*
+bckup_*
+*.bak
+*.backup
