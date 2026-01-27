@@ -20,3 +20,9 @@ old_*
 bckup_*
 *.bak
 *.backup
+
+# Backup and old files
+old_*
+bckup_*
+*.backup
+*.bak
