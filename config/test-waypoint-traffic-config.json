@@ -1,0 +1,61 @@
+{
+  "topology": {
+    "gnbCount": 3,
+    "ueCount": 10,
+    "useFilePositions": false,
+    "areaSize": 1000.0,
+    "strictFileMode": false,
+    "uePlacementStrategy": "grid"
+  },
+  "channel": {
+    "propagationModel": "UMa",
+    "frequency": 3.5e9,
+    "bandwidth": 20e6
+  },
+  "mobility": {
+    "defaultModel": "ConstantPosition",
+    "defaultSpeed": 3.0,
+    "ueWaypoints": {
+      "0": {
+        "speed": 5.0,
+        "waypoints": [
+          {"x": 400.0, "y": 400.0, "z": 1.5},
+          {"x": 300.0, "y": 200.0, "z": 1.5},
+          {"x": 300.0, "y": 150.0, "z": 1.5},
+          {"x": 400.0, "y": 50.0, "z": 1.5}
+        ]
+      },
+      "1": {
+        "speed": 10.0,
+        "waypoints": [
+          {"x": 450.0, "y": 450.0, "z": 1.5},
+          {"x": 150.0, "y": 250.0, "z": 1.5},
+          {"x": 250.0, "y": 100.0, "z": 1.5}
+        ]
+      },
+      "2": {
+        "speed": 15.0,
+        "waypoints": [
+          {"x": 100.0, "y": 100.0, "z": 1.5},
+          {"x": 200.0, "y": 300.0, "z": 1.5}
+        ]
+      }
+    }
+  },
+  "traffic": {
+    "udpRateDl": 10.0,
+    "packetSizeDl": 1024,
+    "udpRateUl": 5.0,
+    "packetSizeUl": 512,
+    "enableFlowMonitoring": true,
+    "startTime": 1.0
+  },
+  "simulation": {
+    "duration": 200.0,
+    "logTraffic": false
+  },
+  "metrics": {
+    "enableFlowMonitor": true,
+    "outputFilePath": "output/waypoint_traffic_results.txt"
+  }
+}
