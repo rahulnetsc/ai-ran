@@ -1,0 +1,16 @@
+*.o
+*.so
+*.a
+.libs/
+.deps/
+*.pyc
+.lock-ns3*
+.waf*
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+*.log
+output/*
+!output/.gitkeep

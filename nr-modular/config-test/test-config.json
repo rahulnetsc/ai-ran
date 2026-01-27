@@ -1,0 +1,36 @@
+{
+  "topology": {
+    "gnbCount": 1,
+    "ueCount": 3,
+    "areaSize": 1000.0,
+    "useFilePositions": false,
+    "uePlacementStrategy": "circle"
+  },
+  
+  "channel": {
+    "propagationModel": "UMa",
+    "frequency": 4000000000,
+    "bandwidth": 20000000
+  },
+  
+  "mobility": {
+    "defaultModel": "ConstantPosition",
+    "defaultSpeed": 0.0
+  },
+  
+  "traffic": {
+    "udpRateDl": 10.0,
+    "packetSizeDl": 1024,
+    "udpRateUl": 5.0,
+    "packetSizeUl": 512
+  },
+  
+  "simulation": {
+    "duration": 15.0
+  },
+  
+  "metrics": {
+    "enableFlowMonitor": true,
+    "outputFilePath": "./test-results.csv"
+  }
+}
