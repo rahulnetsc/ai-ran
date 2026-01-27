@@ -66,7 +66,7 @@ git clone https://github.com/rahulnetsc/ai-ran.git nr-modular
 cd ..
 
 # 4. Configure and build
-./ns3 configure --enable-examples --enable-tests
+./ns3 configure --build-profile=optimized 
 ./ns3 build
 ```
 
