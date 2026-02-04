@@ -813,4 +813,3 @@ For questions, issues, or suggestions:
 
 ---
 
-**Built with ❤️ for 5G NR research and development**
