@@ -192,6 +192,53 @@ NrSimConfig::ParseTopology(const json& j)
 
     NS_LOG_INFO("Topology config parsed: " << topology.gnbCount << " gNBs, " << topology.ueCount
                                             << " UEs");
+    
+    // Additional position loading from file can be implemented here
+    if (j.contains("gnbPositions"))
+    {
+        topology.gnbPositions.clear();
+        const auto& gnbPosArray = j["gnbPositions"];
+        
+        if (gnbPosArray.is_array())
+        {
+            for (const auto& posObj : gnbPosArray)
+            {
+                if (posObj.contains("x") && posObj.contains("y") && posObj.contains("z"))
+                {
+                    double x = posObj["x"].get<double>();
+                    double y = posObj["y"].get<double>();
+                    double z = posObj["z"].get<double>();
+                    topology.gnbPositions.push_back(Vector(x, y, z));
+                }
+            }
+            NS_LOG_INFO("Loaded " << topology.gnbPositions.size() << " gNB positions from config");
+        }
+    }
+    
+    if (j.contains("uePositions"))
+    {
+        topology.uePositions.clear();
+        const auto& uePosArray = j["uePositions"];
+        
+        if (uePosArray.is_array())
+        {
+            for (const auto& posObj : uePosArray)
+            {
+                if (posObj.contains("x") && posObj.contains("y") && posObj.contains("z"))
+                {
+                    double x = posObj["x"].get<double>();
+                    double y = posObj["y"].get<double>();
+                    double z = posObj["z"].get<double>();
+                    topology.uePositions.push_back(Vector(x, y, z));
+                }
+            }
+            NS_LOG_INFO("Loaded " << topology.uePositions.size() << " UE positions from config");
+        }
+    }
+
+    NS_LOG_INFO("Topology config parsed: " << topology.gnbCount << " gNBs, " << topology.ueCount
+                                            << " UEs"); 
+
 }
 
 void
@@ -332,6 +379,31 @@ NrSimConfig::ParseSimulation(const json& j)
 }
 
 void
+NrSimConfig::ParseMonitoring(const json& j)
+{
+    NS_LOG_FUNCTION(this);
+
+    if (j.contains("monitorInterval"))
+        monitoring.monitorInterval = j["monitorInterval"].get<double>();
+
+    NS_LOG_INFO("Monitoring config parsed: interval=" << monitoring.monitorInterval << " seconds");
+}
+
+void
+NrSimConfig::ParseDebug(const json& j)
+{
+    NS_LOG_FUNCTION(this);
+
+    if (j.contains("enableDebugLogs"))
+        debug.enableDebugLogs = j["enableDebugLogs"].get<bool>();
+    if (j.contains("enableVerboseHandoverLogs"))
+        debug.enableVerboseHandoverLogs = j["enableVerboseHandoverLogs"].get<bool>();
+
+    NS_LOG_INFO("Debug config parsed: enableDebugLogs=" << (debug.enableDebugLogs ? "true" : "false")
+                 << ", enableVerboseHandoverLogs=" << (debug.enableVerboseHandoverLogs ? "true" : "false"));
+}
+
+void
 NrSimConfig::ParseMetrics(const json& j)
 {
     NS_LOG_FUNCTION(this);
@@ -341,7 +413,8 @@ NrSimConfig::ParseMetrics(const json& j)
     if (j.contains("outputFilePath"))
         outputFilePath = j["outputFilePath"].get<std::string>();
 
-    NS_LOG_INFO("Metrics config parsed: FlowMonitor=" << (enableFlowMonitor ? "enabled" : "disabled"));
+    NS_LOG_INFO("Metrics config parsed: FlowMonitor=" << (enableFlowMonitor ? "enabled" : "disabled")
+                                                       << ", outputFilePath=" << outputFilePath);
 }
 
 // ========================================================================
@@ -358,11 +431,13 @@ NrSimConfig::Validate() const
     if (topology.gnbCount == 0)
     {
         NS_LOG_ERROR("gnbCount must be > 0, got " << topology.gnbCount);
+        std::cout << "gnbCount must be > 0, got " << topology.gnbCount << std::endl;
         isValid = false;
     }
     if (topology.ueCount == 0)
     {
         NS_LOG_ERROR("ueCount must be > 0, got " << topology.ueCount);
+        std::cout << "ueCount must be > 0, got " << topology.ueCount << std::endl;
         isValid = false;
     }
 
@@ -370,11 +445,13 @@ NrSimConfig::Validate() const
     if (channel.frequency <= 0)
     {
         NS_LOG_ERROR("frequency must be > 0, got " << channel.frequency);
+        std::cout << "frequency must be > 0, got " << channel.frequency << std::endl;
         isValid = false;
     }
     if (channel.bandwidth <= 0)
     {
         NS_LOG_ERROR("bandwidth must be > 0, got " << channel.bandwidth);
+        std::cout << "bandwidth must be > 0, got " << channel.bandwidth << std::endl;
         isValid = false;
     }
 
@@ -382,6 +459,7 @@ NrSimConfig::Validate() const
     if (mobility.defaultSpeed < 0)
     {
         NS_LOG_ERROR("defaultSpeed must be >= 0, got " << mobility.defaultSpeed);
+        std::cout << "defaultSpeed must be >= 0, got " << mobility.defaultSpeed << std::endl;
         isValid = false;
     }
 
@@ -398,12 +476,15 @@ NrSimConfig::Validate() const
         {
             NS_LOG_ERROR("UE " << ueId << " has only " << config.waypoints.size()
                                 << " waypoints (need at least 2)");
+            std::cout << "UE " << ueId << " has only " << config.waypoints.size()
+                      << " waypoints (need at least 2)" << std::endl;
             isValid = false;
         }
 
         if (config.speed <= 0)
         {
             NS_LOG_ERROR("UE " << ueId << " has invalid speed: " << config.speed);
+            std::cout << "UE " << ueId << " has invalid speed: " << config.speed << std::endl;
             isValid = false;
         }
     }
@@ -412,6 +493,7 @@ NrSimConfig::Validate() const
     if (traffic.udpRateDl <= 0)
     {
         NS_LOG_ERROR("udpRateDl must be > 0, got " << traffic.udpRateDl);
+        std::cout << "udpRateDl must be > 0, got " << traffic.udpRateDl << std::endl;
         isValid = false;
     }
 
@@ -419,6 +501,7 @@ NrSimConfig::Validate() const
     if (simDuration <= 0)
     {
         NS_LOG_ERROR("simDuration must be > 0, got " << simDuration);
+        std::cout << "simDuration must be > 0, got " << simDuration << std::endl;
         isValid = false;
     }
 

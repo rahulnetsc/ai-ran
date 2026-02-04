@@ -106,6 +106,10 @@ class NrSimConfig : public Object
 
         // Grid placement
         double gridSpacing = 100.0;
+
+        // Position vectors (if loaded from file)
+        std::vector<Vector> gnbPositions;  // gNB positions from GUI
+        std::vector<Vector> uePositions;   // UE positions from GUI
     } topology;
 
     // Channel parameters
@@ -156,6 +160,20 @@ class NrSimConfig : public Object
     double simDuration = 10.0;  // seconds
     bool logTraffic = false;    // Enable detailed traffic logging
 
+    // Monitoring parameters
+    struct MonitoringParams
+    {
+        double monitorInterval = 1.0; // seconds
+    } monitoring;
+
+    // Debug parameters
+    struct DebugParams
+    {
+        bool enableDebugLogs = false;  // Enable debug logging
+        bool enableVerboseHandoverLogs = false; // Verbose handover logs
+    } debug;
+
+
     // Metrics parameters
     bool enableFlowMonitor = true;
     std::string outputFilePath = "output/results.txt";
@@ -193,6 +211,17 @@ class NrSimConfig : public Object
      * @param j JSON object
      */
     void ParseSimulation(const nlohmann::json& j);
+
+    /**
+     * @brief Parse monitoring section from JSON
+     * @param j JSON object
+     */
+    void ParseMonitoring(const nlohmann::json& j);
+    /**
+     * @brief Parse debug section from JSON
+     * @param j JSON object
+     */
+    void ParseDebug(const nlohmann::json& j);
 
     /**
      * @brief Parse metrics section from JSON

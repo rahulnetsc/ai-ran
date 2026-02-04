@@ -184,6 +184,7 @@ NrSimulationManager::Initialize()
     // STEP 3: Validate configuration
     // =================================================================
     NS_LOG_INFO("Step 3/10: Validating configuration...");
+    std::cout << "m_config->topology.useFilePositions = " << (m_config->topology.useFilePositions ? "true" : "false") << std::endl;
     m_configManager->ValidateOrAbort(m_config);
     
     // =================================================================
@@ -234,7 +235,6 @@ NrSimulationManager::Initialize()
         m_networkManager->GetUeDevices(),
         m_networkManager->GetGnbDevices()
     );
-    
 
     // =================================================================
     // DONE
@@ -275,7 +275,35 @@ NrSimulationManager::Run()
     // =================================================================
     NS_LOG_INFO("STEP 9/10: Installing traffic...");
     m_trafficManager->InstallTraffic(gnbNodes, ueNodes);
+
+    NS_LOG_INFO("STEP 9b/10: Enabling real-time traffic monitoring...");
+    std::cout << "Enabling real-time traffic monitoring..." << std::endl;
+    m_trafficManager->EnableRealTimeMonitoring(m_config->monitoring.monitorInterval);
     
+    // =================================================================
+    // Setup Output Manager
+    // =================================================================
+    NS_LOG_INFO("Step 10/10: Setting up Output Manager...");
+    std::cout << "Step 10/10: Setting up Output Manager..." << std::endl;
+
+    m_outputManager->SetManagers(
+        m_topologyManager,
+        m_networkManager,
+        m_trafficManager,
+        m_metricsManager
+    );
+
+    m_outputManager->InitializeTelemetry();
+
+    // Configure for UDP publishing
+    m_outputManager->ConfigurePublishing(
+        NrOutputManager::PUBLISH_UDP,
+        "127.0.0.1",
+        5555
+    );
+
+    // Start with 100ms updates
+    m_outputManager->StartTelemetry(0.1);
     // =================================================================
     // Run the simulation
     // =================================================================
@@ -310,14 +338,9 @@ NrSimulationManager::Finalize()
     NS_LOG_INFO("========================================");
     
     // =================================================================
-    // Collect final metrics
+    // Print Handover summary
     // =================================================================
-    NS_LOG_INFO("Collecting metrics...");
-    m_trafficManager->CollectMetrics();
-    m_trafficManager->PrintMetricsSummary();  // ← ADD THIS!
-
-    // Print handover summary
-    if (m_config->topology.gnbCount > 1)
+    if ((m_config->topology.gnbCount > 1) && (m_config->debug.enableVerboseHandoverLogs))
     {
         std::cout << "\n========================================" << std::endl;
         std::cout << "Handover Summary" << std::endl;
@@ -340,6 +363,15 @@ NrSimulationManager::Finalize()
         }
         std::cout << "========================================\n" << std::endl;
     }
+
+    // =================================================================
+    // Collect final metrics
+    // =================================================================
+    NS_LOG_INFO("Collecting metrics...");
+    m_trafficManager->CollectMetrics();
+    m_trafficManager->PrintMetricsSummary();  // ← ADD THIS!
+
+    
 
     // =================================================================
     // Write results to file

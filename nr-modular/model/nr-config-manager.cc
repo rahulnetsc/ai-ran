@@ -100,11 +100,13 @@ NrConfigManager::Validate(const Ptr<NrSimConfig>& config) const
         if (config->topology.positionFile.empty())
         {
             NS_LOG_ERROR("useFilePositions is true but positionFile is empty");
+            std::cout << "useFilePositions is true but positionFile is empty" << std::endl;
             valid = false;
         }
         else if (!FileExists(config->topology.positionFile))
         {
             NS_LOG_ERROR("Position file does not exist: " << config->topology.positionFile);
+            std::cout << "Position file does not exist: " << config->topology.positionFile << std::endl;
             valid = false;
         }
     }
@@ -166,6 +168,39 @@ NrConfigManager::SaveToJson(const Ptr<NrSimConfig>& config, const std::string& f
         j["topology"]["clusterRadius"] = config->topology.clusterRadius;
         j["topology"]["uesPerCluster"] = config->topology.uesPerCluster;
         j["topology"]["gridSpacing"] = config->topology.gridSpacing;
+
+        // NEW: Serialize position arrays (if present)
+        if (!config->topology.gnbPositions.empty())
+        {
+            json gnbPosArray = json::array();
+            for (uint32_t i = 0; i < config->topology.gnbPositions.size(); ++i)
+            {
+                const Vector& pos = config->topology.gnbPositions[i];
+                gnbPosArray.push_back({
+                    {"id", i},
+                    {"x", pos.x},
+                    {"y", pos.y},
+                    {"z", pos.z}
+                });
+            }
+            j["topology"]["gnbPositions"] = gnbPosArray;
+        }
+        
+        if (!config->topology.uePositions.empty())
+        {
+            json uePosArray = json::array();
+            for (uint32_t i = 0; i < config->topology.uePositions.size(); ++i)
+            {
+                const Vector& pos = config->topology.uePositions[i];
+                uePosArray.push_back({
+                    {"id", i},
+                    {"x", pos.x},
+                    {"y", pos.y},
+                    {"z", pos.z}
+                });
+            }
+            j["topology"]["uePositions"] = uePosArray;
+        }
 
         // Channel section
         j["channel"]["propagationModel"] = config->channel.propagationModel;

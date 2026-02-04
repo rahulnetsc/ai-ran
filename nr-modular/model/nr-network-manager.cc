@@ -19,6 +19,7 @@
 #include "ns3/nr-channel-helper.h"
 #include "ns3/pointer.h"
 #include "ns3/uinteger.h"
+#include "ns3/double.h"
 #include "ns3/eps-bearer.h"
 #include "ns3/ideal-beamforming-algorithm.h"
 #include "ns3/nr-eps-bearer.h"
@@ -218,6 +219,19 @@ NrNetworkManager::SetupNrInfrastructure(const NodeContainer& gnbNodes,
     std::cout << "Installing NR devices" << std::endl;
     std::cout << "========================================" << std::endl;
 
+    // =================================================================
+    // Set HANDOVER PARAMETERS (if needed in future)
+    // =================================================================
+    std::cout << "\nSetting handover parameters..." << std::endl;
+    m_nrHelper->SetHandoverAlgorithmType ("ns3::NrA3RsrpHandoverAlgorithm");
+    m_nrHelper->SetHandoverAlgorithmAttribute ("Hysteresis",
+                                                DoubleValue (3.0));
+    m_nrHelper->SetHandoverAlgorithmAttribute ("TimeToTrigger",
+                                                TimeValue (MilliSeconds (256)));
+    std::cout << "  ✓ Handover algorithm configured" << std::endl;
+    // =================================================================
+    // STEP 8: Install gNB and UE devices
+    // =================================================================
     // From cttc-nr-demo.cc lines 407-410
     std::cout << "Installing gNB devices..." << std::endl;
     m_gnbDevices = m_nrHelper->InstallGnbDevice(gnbNodes, m_allBwps);
@@ -226,7 +240,7 @@ NrNetworkManager::SetupNrInfrastructure(const NodeContainer& gnbNodes,
     std::cout << "\nInstalling UE devices..." << std::endl;
     m_ueDevices = m_nrHelper->InstallUeDevice(ueNodes, m_allBwps);
     std::cout << "  ✓ " << m_ueDevices.GetN() << " UE devices installed" << std::endl;
-
+    
     std::cout << "\n========================================" << std::endl;
     std::cout << "NR infrastructure setup complete!" << std::endl;
     std::cout << "========================================\n" << std::endl;
@@ -275,18 +289,6 @@ NrNetworkManager::AssignIpAddresses(const NodeContainer& ueNodes)
     
 }
 
-//     std::cout << "\n========================================" << std::endl;
-//     std::cout << "Attaching UEs to gNBs" << std::endl;
-//     std::cout << "========================================" << std::endl;
-
-//     // From cttc-3gpp-channel-simple-ran.cc line ~290
-//     m_nrHelper->AttachToClosestGnb(m_ueDevices, m_gnbDevices);
-
-
-//     std::cout << "  ✓ " << m_ueDevices.GetN() << " UEs attached" << std::endl;
-//     std::cout << "========================================\n" << std::endl;
-
-
 void NrNetworkManager::AttachUes(Ptr<NrHelper> nrHelper, NetDeviceContainer ueDevices, NetDeviceContainer gnbDevices)
 {
     NS_LOG_FUNCTION(this);
@@ -314,6 +316,9 @@ void NrNetworkManager::AttachUes(Ptr<NrHelper> nrHelper, NetDeviceContainer ueDe
                   << pos.x << ", " << pos.y << ", " << pos.z << ")" << std::endl;
     }
     nrHelper->AttachToClosestGnb(ueDevices, gnbDevices);
+
+    // Optional: Ensure the RLC reassembly timer is long enough to handle handover jitter
+    // Config::SetDefault("ns3::NrRlcAm::ReassemblyTimer", TimeValue(MilliSeconds(200)));
     
     std::cout << "  ✓ " << ueDevices.GetN() << " UEs attached" << std::endl;
     std::cout << "========================================\n" << std::endl;
@@ -372,6 +377,7 @@ NrNetworkManager::EnableHandoverTracing(bool enable)
         
         // Initialize tracking map
         uint64_t imsi = rrc->GetImsi();
+        m_imsiToUeIndexMap[imsi] = i; 
         m_ueToGnbMap[imsi] = 0; // Will be updated on connection/handover
         m_handoverCountPerUe[i] = 0;
     }
@@ -440,8 +446,11 @@ NrNetworkManager::NotifyHandoverEndError(std::string context, uint64_t imsi, uin
 uint32_t
 NrNetworkManager::ImsiToUeIndex(uint64_t imsi) const
 {
-    // IMSI typically starts at 1, so IMSI-1 gives 0-based index
-    // But verify this matches your setup
+    auto it = m_imsiToUeIndexMap.find(imsi);
+    if (it != m_imsiToUeIndexMap.end())
+        return it->second;
+    
+    NS_LOG_WARN("IMSI " << imsi << " not in map!");
     return static_cast<uint32_t>(imsi - 1);
 }
 

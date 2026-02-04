@@ -134,12 +134,12 @@ public:
     
     /**
      * @brief Enable real-time throughput monitoring
-     * @param interval Monitoring interval in seconds (default: 1.0)
+     * @param interval Monitoring interval in seconds (default: 0.1)
      * 
      * When enabled, prints instantaneous throughput every 'interval' seconds
      * during simulation.
      */
-    void EnableRealTimeMonitoring(double interval = 1.0);
+    void EnableRealTimeMonitoring(double interval = 0.1);
     
     /**
      * @brief Disable real-time monitoring
@@ -231,14 +231,18 @@ private:
     ApplicationContainer m_serverApps;
     ApplicationContainer m_clientApps;
     
-    // FlowMonitor
-    Ptr<FlowMonitor> m_flowMonitor;
-    Ptr<Ipv4FlowClassifier> m_flowClassifier;
+    // // FlowMonitor
+    // Ptr<FlowMonitor> m_flowMonitor;
+    // Ptr<Ipv4FlowClassifier> m_flowClassifier;
     
     // Real-time monitoring
     bool m_enableRealTimeMonitoring;
     double m_monitoringInterval;
     EventId m_monitoringEvent;
+
+    Time m_lastSampleTime;
+    std::vector<uint64_t> m_lastDlRxBytes;
+    std::vector<uint64_t> m_lastUlRxBytes;
     
     // Metrics storage
     std::map<uint32_t, PerUeMetrics> m_ueMetrics;

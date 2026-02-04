@@ -531,6 +531,9 @@ private:
     // PRIVATE HELPER METHODS
     // ========================================================================
     
+    
+    std::map<uint64_t, uint32_t> m_imsiToUeIndexMap;
+    
     /**
      * \brief Configure channel model
      * 

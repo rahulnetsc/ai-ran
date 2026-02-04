@@ -138,7 +138,7 @@ NrTopologyManager::DeployTopology()
             // RandomWalk → Configure and install
             mobility.SetMobilityModel(
                 "ns3::RandomWalk2dMobilityModel",
-                "Bounds", RectangleValue(Rectangle(-bounds, bounds, -bounds, bounds)),
+                "Bounds", RectangleValue(Rectangle(0.0, areaSize, 0.0, areaSize)),     
                 "Speed", StringValue("ns3::ConstantRandomVariable[Constant=" + std::to_string(speed) + "]"),
                 "Distance", DoubleValue(50.0)
             );
@@ -159,6 +159,8 @@ NrTopologyManager::DeployTopology()
     std::cout << "  RandomWalk: " << randomWalkUes << " UEs" << std::endl;
     std::cout << "  Static: " << staticUes << " UEs" << std::endl;
 
+    std::cout << "\n [nr-topology-manager] topology.useFilePositions = "
+              << (m_config->topology.useFilePositions ? "true" : "false") << std::endl;
     // Deploy positions based on configuration
     if (m_config->topology.useFilePositions)
     {
@@ -433,6 +435,8 @@ NrTopologyManager::DeployHexagonal()
         randY->SetAttribute("Min", DoubleValue(0.0));
         randY->SetAttribute("Max", DoubleValue(areaSize));
         
+        std::cout << "[STRATEGY]: " << strategy << " Area: 0 to " << areaSize << " m (X and Y)" << std::endl;
+
         for (uint32_t i = 0; i < numUes; ++i)
         {
             Vector pos(randX->GetValue(), randY->GetValue(), ueHeight);
@@ -442,7 +446,7 @@ NrTopologyManager::DeployHexagonal()
             NS_ASSERT(mobility != nullptr);
             mobility->SetPosition(pos);
             
-            if (i < 5 || i >= numUes - 2)  // Show first 5 and last 2
+            if (i < 5 || i >= numUes - 2)  // Show first 5 and last 2 UEs
             {
                 std::cout << "  UE " << i << ": (" 
                           << std::fixed << std::setprecision(2)
@@ -561,6 +565,8 @@ NrTopologyManager::SetInitialPositionsFromWaypoints()
                 Ptr<MobilityModel> mobility = m_ueNodes.Get(ueId)->GetObject<MobilityModel>();
                 NS_ASSERT(mobility != nullptr);
                 mobility->SetPosition(firstWaypoint);
+                std::cout << "  [nr-topology-manager] UE " << ueId 
+                          << " position overridden to first waypoint." << std::endl;
                 
                 // Update stored position
                 if (ueId < m_uePositions.size())
