@@ -35,7 +35,10 @@ build_lib(
         model/nr-traffic-manager.cc
         model/nr-metrics-manager.cc
         model/nr-output-manager.cc
-        
+        model/utils/nr-milp-types.cc
+        model/nr-milp-interface.cc
+        model/nr-bwp-manager.cc
+        model/nr-milp-executor-scheduler.cc
         # Utilities
         model/utils/nr-sim-config.cc
         
@@ -53,7 +56,10 @@ build_lib(
         model/nr-traffic-manager.h
         model/nr-metrics-manager.h
         model/nr-output-manager.h
-        
+        model/utils/nr-milp-types.h
+        model/nr-milp-interface.h
+        model/nr-bwp-manager.h
+        model/nr-milp-executor-scheduler.h
         # Utilities
         model/utils/nr-sim-config.h
         

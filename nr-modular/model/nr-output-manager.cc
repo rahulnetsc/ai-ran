@@ -14,6 +14,7 @@
 #include "nr-metrics-manager.h"
 #include "nr-channel-manager.h"
 #include "nr-mobility-manager.h"
+#include "nr-bwp-manager.h"
 
 #include "ns3/log.h"
 #include "ns3/simulator.h"
@@ -70,6 +71,7 @@ NrOutputManager::NrOutputManager()
       m_metricsManager(nullptr),
       m_channelManager(nullptr),
       m_mobilityManager(nullptr),
+    //   m_bwpManager(nullptr),
       m_telemetryEnabled(false),
       m_telemetryInitialized(false),
       m_publishMethod(PUBLISH_DISABLED),
@@ -82,6 +84,8 @@ NrOutputManager::NrOutputManager()
       m_publishedStateCount(0),
       m_failedPublishCount(0),
       m_publishInterval(Seconds(0.1))
+    //   m_bwpConfigurationSent(false)
+
 {
     NS_LOG_FUNCTION(this);
     
@@ -130,6 +134,7 @@ NrOutputManager::DoDispose()
     m_metricsManager = nullptr;
     m_channelManager = nullptr;
     m_mobilityManager = nullptr;
+    // m_bwpManager = nullptr;
     
     Object::DoDispose();
 }
@@ -151,7 +156,9 @@ NrOutputManager::SetManagers(Ptr<NrTopologyManager> topology,
                             Ptr<NrTrafficManager> traffic,
                             Ptr<NrMetricsManager> metrics,
                             Ptr<NrChannelManager> channel,
-                            Ptr<NrMobilityManager> mobility)
+                            Ptr<NrMobilityManager> mobility
+                            // Ptr<NrBwpManager> bwp
+                            )
 {
     NS_LOG_FUNCTION(this);
     
@@ -161,7 +168,7 @@ NrOutputManager::SetManagers(Ptr<NrTopologyManager> topology,
     m_metricsManager = metrics;
     m_channelManager = channel;
     m_mobilityManager = mobility;
-    
+    // m_bwpManager = bwp;
     NS_LOG_INFO("OutputManager: Managers configured");
 }
 
@@ -490,6 +497,13 @@ NrOutputManager::CollectCurrentState()
         CollectHandoverHistory(state);
     }
     
+    // ===== BWP Configuration & Statistics =====
+    // if (m_bwpManager != nullptr && m_bwpManager->IsInitialized())
+    // {
+    //     CollectBwpConfiguration(state);
+    //     CollectBwpStats(state);
+    // }
+
     // ===== Event log =====
     if (m_telemetryConfig.includeEventLog)
     {
@@ -641,6 +655,23 @@ NrOutputManager::CollectUeState(uint32_t ueId)
         ueState.distanceToGnb = 0.0;
     }
     
+    // ===== BWP Assignment =====
+    // if (m_bwpManager != nullptr && m_bwpManager->IsInitialized())
+    // {
+    //     ueState.currentBwpId = m_bwpManager->GetUeBwpAssignment(ueId);
+        
+    //     NrBwpManager::BwpConfig bwpConfig = m_bwpManager->GetBwpConfig(ueState.currentBwpId);
+    //     ueState.bwpCenterFrequencyHz = bwpConfig.centerFrequencyHz;
+    //     ueState.bwpBandwidthHz = bwpConfig.bandwidthHz;
+    //     ueState.bwpNumerology = bwpConfig.numerology;
+    // }
+    // else
+    // {
+    //     ueState.currentBwpId = 0;
+    //     ueState.bwpCenterFrequencyHz = 0.0;
+    //     ueState.bwpBandwidthHz = 0.0;
+    //     ueState.bwpNumerology = 0;
+    // }
     // ===== Traffic Statistics =====
     ueState.hasRadioMetrics = false;
     ueState.hasBufferMetrics = false;
@@ -960,6 +991,60 @@ NrOutputManager::CollectHandoverHistory(SimulationState& state)
     state.recentHandovers = m_handoverEvents;
 }
 
+// void
+// NrOutputManager::CollectBwpConfiguration(SimulationState& state)
+// {
+//     if (m_bwpManager == nullptr || !m_bwpManager->IsInitialized())
+//     {
+//         return;
+//     }
+    
+//     state.bwpConfiguration.numBwps = m_bwpManager->GetNumBwps();
+    
+//     std::vector<NrBwpManager::BwpConfig> bwpConfigs = m_bwpManager->GetAllBwpConfigs();
+    
+//     for (const auto& bwpCfg : bwpConfigs)
+//     {
+//         SimulationState::BwpConfigInfo info;
+//         info.bwpId = bwpCfg.bwpId;
+//         info.centerFrequencyHz = bwpCfg.centerFrequencyHz;
+//         info.bandwidthHz = bwpCfg.bandwidthHz;
+//         info.frequencyStartHz = bwpCfg.frequencyStartHz;
+//         info.frequencyEndHz = bwpCfg.frequencyEndHz;
+//         info.numerology = bwpCfg.numerology;
+//         info.subcarrierSpacingKhz = bwpCfg.subcarrierSpacingKhz;
+//         info.numResourceBlocks = bwpCfg.numResourceBlocks;
+//         info.description = bwpCfg.description;
+//         info.colorHex = bwpCfg.colorHex;
+        
+//         state.bwpConfiguration.bwps.push_back(info);
+//     }
+// }
+
+// void
+// NrOutputManager::CollectBwpStats(SimulationState& state)
+// {
+//     if (m_bwpManager == nullptr || !m_bwpManager->IsInitialized())
+//     {
+//         return;
+//     }
+    
+//     // ✅ NEW: Collect real-time UE assignments for the dashboard
+//     std::map<uint32_t, uint32_t> assignments = m_bwpManager->GetAllAssignments();
+    
+//     // Store in the state object for JSON serialization
+//     state.bwpStats.assignments = assignments;
+
+//     // Calculate UE count per BWP for the "Duty Cycle" visualization
+//     uint32_t numBwps = m_bwpManager->GetNumBwps();
+//     std::vector<uint32_t> counts(numBwps, 0);
+//     for (auto const& [ueId, bwpId] : assignments) {
+//         if (bwpId < numBwps) {
+//             counts[bwpId]++;
+//         }
+//     }
+//     state.bwpStats.ueCountPerBwp = counts;
+// }
 // ================================================================
 // JSON FORMATTING
 // ================================================================
@@ -994,6 +1079,41 @@ NrOutputManager::StateToJson(const SimulationState& state, bool prettyPrint)
         j["config"]["bandwidth_mhz"] = m_config->channel.bandwidth / 1e6;
         j["config"]["frequency_ghz"] = m_config->channel.frequency / 1e9;
         j["config"]["area_size"]     = m_config->topology.areaSize;
+    }
+    
+    // ===== BWP Configuration (Static) =====
+    if (m_telemetryConfig.includeAttachments && !state.bwpConfiguration.bwps.empty())
+    {
+        j["bwp_configuration"]["num_bwps"] = state.bwpConfiguration.numBwps;
+        j["bwp_configuration"]["bwps"] = json::array();
+        
+        for (const auto& bwpInfo : state.bwpConfiguration.bwps)
+        {
+            json jBwp;
+            jBwp["bwp_id"] = bwpInfo.bwpId;
+            jBwp["center_frequency_hz"] = bwpInfo.centerFrequencyHz;
+            jBwp["center_frequency_ghz"] = bwpInfo.centerFrequencyHz / 1e9;
+            jBwp["bandwidth_hz"] = bwpInfo.bandwidthHz;
+            jBwp["bandwidth_mhz"] = bwpInfo.bandwidthHz / 1e6;
+            jBwp["frequency_start_hz"] = bwpInfo.frequencyStartHz;
+            jBwp["frequency_start_ghz"] = bwpInfo.frequencyStartHz / 1e9;
+            jBwp["frequency_end_hz"] = bwpInfo.frequencyEndHz;
+            jBwp["frequency_end_ghz"] = bwpInfo.frequencyEndHz / 1e9;
+            jBwp["numerology"] = bwpInfo.numerology;
+            jBwp["subcarrier_spacing_khz"] = bwpInfo.subcarrierSpacingKhz;
+            jBwp["num_resource_blocks"] = bwpInfo.numResourceBlocks;
+            jBwp["description"] = bwpInfo.description;
+            jBwp["color"] = bwpInfo.colorHex;
+            
+            j["bwp_configuration"]["bwps"].push_back(jBwp);
+        }
+    }
+
+    // ===== BWP Statistics (Dynamic) =====
+    if (m_telemetryConfig.includeAttachments && !state.bwpStats.assignments.empty())
+    {
+        j["bwp_stats"]["ue_count_per_bwp"] = state.bwpStats.ueCountPerBwp;
+        j["bwp_stats"]["assignments"] = state.bwpStats.assignments;
     }
     
     // ===== UE Topology =====
@@ -1048,6 +1168,15 @@ NrOutputManager::StateToJson(const SimulationState& state, bool prettyPrint)
             jUe["radio"]["available"] = false;
         }
         
+        jUe["bwp"]["current_bwp_id"] = ue.currentBwpId;
+        jUe["bwp"]["center_frequency_hz"] = ue.bwpCenterFrequencyHz;
+        jUe["bwp"]["bandwidth_mhz"] = ue.bwpBandwidthHz / 1e6;
+        jUe["bwp"]["numerology"] = ue.bwpNumerology;
+
+        // ✅ NEW: Add PRB details to the telemetry
+        // Note: You will need to add 'numPrbs' and 'startPrb' to your UeState struct in the .h file
+        // jUe["bwp"]["allocated_prbs"] = ue.numResourceBlocks; // Or your specific controller limit
+
         if (m_telemetryConfig.includeTrafficStats)
         {
             jUe["traffic"]["dl"]["throughput_mbps"] = ue.dlThroughputMbps;
@@ -1074,6 +1203,14 @@ NrOutputManager::StateToJson(const SimulationState& state, bool prettyPrint)
         }
         
         j["topology"]["ues"].push_back(jUe);
+
+        // BWP info
+        jUe["bwp"]["current_bwp_id"] = ue.currentBwpId;
+        jUe["bwp"]["center_frequency_hz"] = ue.bwpCenterFrequencyHz;
+        jUe["bwp"]["center_frequency_ghz"] = ue.bwpCenterFrequencyHz / 1e9;
+        jUe["bwp"]["bandwidth_hz"] = ue.bwpBandwidthHz;
+        jUe["bwp"]["bandwidth_mhz"] = ue.bwpBandwidthHz / 1e6;
+        jUe["bwp"]["numerology"] = ue.bwpNumerology;
     }
     
     // ===== gNB Topology =====
@@ -1120,6 +1257,10 @@ NrOutputManager::StateToJson(const SimulationState& state, bool prettyPrint)
         
         j["topology"]["gnbs"].push_back(jGnb);
     }
+    
+
+    // ⭐ ADD BWP ALLOCATION SECTION
+    // ===== BWP Allocation =====
     
     // ===== Traffic Summary =====
     if (m_telemetryConfig.includeTrafficStats)

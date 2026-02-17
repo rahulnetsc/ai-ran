@@ -479,6 +479,12 @@ NrTopologyManager::DeployHexagonal()
     {
         // Grid placement
         double spacing = m_config->topology.gridSpacing;
+        // if spacing exceeds area, adjust to fit
+        if (spacing * std::ceil(std::sqrt(numUes)) > areaSize)
+        {
+            spacing = areaSize / std::ceil(std::sqrt(numUes)+1);
+            std::cout << "  Warning: grid spacing too large, adjusted to " << spacing << " m" << std::endl;
+        }
         uint32_t gridSize = std::ceil(std::sqrt(numUes));
         
         uint32_t idx = 0;
@@ -625,13 +631,13 @@ NrTopologyManager::GetNumUes() const
     return m_ueNodes.GetN();
 }
 
-std::vector<Vector>
+const std::vector<Vector>&
 NrTopologyManager::GetGnbPositions() const
 {
     return m_gnbPositions;
 }
 
-std::vector<Vector>
+const std::vector<Vector>&
 NrTopologyManager::GetUePositions() const
 {
     return m_uePositions;

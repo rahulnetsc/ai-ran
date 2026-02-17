@@ -29,7 +29,11 @@
 #include "ns3/nr-gnb-net-device.h"
 #include "ns3/config.h"
 #include "ns3/nr-ue-rrc.h"
+#include "ns3/nr-ue-mac.h"
 
+// MILP scheduler
+#include "utils/nr-milp-types.h"
+#include "nr-milp-executor-scheduler.h"
 
 #include <iostream>
 #include <utility>
@@ -230,9 +234,39 @@ NrNetworkManager::SetupNrInfrastructure(const NodeContainer& gnbNodes,
                                                 TimeValue (MilliSeconds (256)));
     std::cout << "  ✓ Handover algorithm configured" << std::endl;
     // =================================================================
-    // STEP 8: Install gNB and UE devices
+    // STEP 8: Set Scheduler TypeId BEFORE device installation
+    // =================================================================
+    // NrHelper installs the scheduler during InstallGnbDevice().
+    // It must be configured HERE - it cannot be swapped after installation.
+    //
+    // TODO: Read from m_config->scheduling.mode once NrSimConfig has that field.
+    // For now: set via a local flag. Set to true for MILP Baseline 2.
+    
+    bool useMilpScheduler = true;  // ← Change to false for default PF scheduler
+    
+    // if (useMilpScheduler)
+    // {
+    //     std::cout << "  Setting MILP Executor Scheduler..." << std::endl;
+    //     m_nrHelper->SetSchedulerTypeId(
+    //         TypeId::LookupByName("ns3::NrMilpExecutorScheduler"));
+    //     std::cout << "  ✓ Scheduler: ns3::NrMilpExecutorScheduler" << std::endl;
+    // }
+    // else
+    // {
+    //     // Default: Proportional Fair scheduler (ns-3 NR built-in)
+    //     std::cout << "  ✓ Scheduler: default (NrMacSchedulerTdmaPF)" << std::endl;
+    // }
+
+        // STEP 8: Configure Scheduler Type
+    std::cout << "  Setting MILP Executor Scheduler Type..." << std::endl;
+    // Use the TypeId directly. This tells the helper: "When you install gNBs, 
+    // create an instance of NrMilpExecutorScheduler for each one."
+    m_nrHelper->SetSchedulerTypeId(NrMilpExecutorScheduler::GetTypeId());
+    // =================================================================
+    // STEP 8b: Install gNB and UE devices
     // =================================================================
     // From cttc-nr-demo.cc lines 407-410
+    // Scheduler TypeId set above is used HERE during installation.
     std::cout << "Installing gNB devices..." << std::endl;
     m_gnbDevices = m_nrHelper->InstallGnbDevice(gnbNodes, m_allBwps);
     std::cout << "  ✓ " << m_gnbDevices.GetN() << " gNB devices installed" << std::endl;
@@ -579,6 +613,66 @@ Ipv4InterfaceContainer
 NrNetworkManager::GetUeIpInterfaces() const
 {
     return m_ueIpInterfaces;
+}
+
+// ============================================================================
+// UE IDENTIFIER MAPPING
+// ============================================================================
+
+uint16_t
+NrNetworkManager::GetUeRnti(uint32_t ueId) const
+{
+    NS_LOG_FUNCTION(this << ueId);
+    
+    // Validate UE ID
+    if (ueId >= m_ueDevices.GetN())
+    {
+        NS_FATAL_ERROR("Invalid UE ID: " << ueId << " (max: " << (m_ueDevices.GetN() - 1) << ")");
+    }
+    
+    // Get UE device
+    Ptr<NetDevice> netDev = m_ueDevices.Get(ueId);
+    Ptr<NrUeNetDevice> ueNetDev = DynamicCast<NrUeNetDevice>(netDev);
+    
+    if (!ueNetDev)
+    {
+        NS_FATAL_ERROR("Device " << ueId << " is not an NrUeNetDevice");
+    }
+    
+    // Get MAC for BWP 0 (single BWP scenario)
+    Ptr<NrUeMac> ueMac = ueNetDev->GetMac(0);
+    
+    if (!ueMac)
+    {
+        NS_FATAL_ERROR("UE " << ueId << " has no MAC at BWP 0");
+    }
+    
+    // Get RNTI from MAC
+    uint16_t rnti = ueMac->GetRnti();
+    
+    NS_LOG_DEBUG("UE " << ueId << " has RNTI " << rnti);
+    
+    return rnti;
+}
+
+uint32_t
+NrNetworkManager::GetUeIdFromRnti(uint16_t rnti) const
+{
+    NS_LOG_FUNCTION(this << rnti);
+    
+    // Linear search through all UEs
+    uint32_t numUes = m_ueDevices.GetN();
+    for (uint32_t ueId = 0; ueId < numUes; ueId++)
+    {
+        if (GetUeRnti(ueId) == rnti)
+        {
+            NS_LOG_DEBUG("RNTI " << rnti << " belongs to UE " << ueId);
+            return ueId;
+        }
+    }
+    
+    NS_FATAL_ERROR("No UE found with RNTI " << rnti);
+    return 0;  // Never reached
 }
 
 } // namespace ns3

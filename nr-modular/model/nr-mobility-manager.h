@@ -65,6 +65,28 @@ class NrMobilityManager : public Object
      */
     void InstallUeMobility(const NodeContainer& ueNodes);
 
+    /**
+     * @brief Get current position of a UE
+     * @param ueNode UE node
+     * @return Current position vector
+     */
+    Vector GetUePosition(Ptr<Node> ueNode) const;
+
+    /**
+     * @brief Get current positions of all UEs
+     * @param ueNodes Container of UE nodes
+     * @return Vector of current positions
+     */
+    std::vector<Vector> GetUePositions(const NodeContainer& ueNodes) const;
+
+    /**
+     * @brief Get current velocity of a UE
+     * @param ueNode UE node
+     * @return Current velocity vector
+     */
+    Vector GetUeVelocity(Ptr<Node> ueNode) const;
+
+
   protected:
     void DoDispose() override;
 

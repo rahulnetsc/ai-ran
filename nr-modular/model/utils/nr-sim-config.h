@@ -163,7 +163,8 @@ class NrSimConfig : public Object
     // Monitoring parameters
     struct MonitoringParams
     {
-        double monitorInterval = 1.0; // seconds
+        double monitorInterval = 0.051; // seconds
+        bool enableExternalControl = true;
     } monitoring;
 
     // Debug parameters

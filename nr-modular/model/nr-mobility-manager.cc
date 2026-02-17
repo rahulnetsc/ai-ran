@@ -73,10 +73,14 @@ NrMobilityManager::InstallGnbMobility(const NodeContainer& gnbNodes)
 {
     NS_LOG_FUNCTION(this << gnbNodes.GetN());
     NS_ABORT_MSG_IF(m_config == nullptr, "Config must be set before installing mobility");
-
-    MobilityHelper mobility;
-    mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
-    mobility.Install(gnbNodes);
+    // Check if already installed: Should be already installed from Topology Manager
+    // getting mobility model from each gNB node
+    for (uint32_t gnbId = 0; gnbId < gnbNodes.GetN(); ++gnbId)
+    {
+        Ptr<Node> gnbNode = gnbNodes.Get(gnbId);
+        Ptr<MobilityModel> mob = gnbNode->GetObject<MobilityModel>();
+        NS_ABORT_MSG_IF(mob == nullptr, "No mobility model on gNB " << gnbId);
+    }
 }
 
 void
@@ -100,6 +104,7 @@ NrMobilityManager::InstallUeMobility(const NodeContainer& ueNodes)
 
     for (uint32_t ueId = 0; ueId < ueNodes.GetN(); ++ueId)
     {
+
         Ptr<Node> ueNode = ueNodes.Get(ueId);
 
         // Check if this UE has waypoints defined
@@ -125,17 +130,10 @@ NrMobilityManager::InstallUeMobility(const NodeContainer& ueNodes)
         else
         {
             std::string defaultModel = m_config->mobility.defaultModel;
-
-            if (defaultModel == "RandomWalk" || defaultModel == "RandomWalk2d")
+            if (defaultModel == "Static" || defaultModel == "ConstantPosition" || defaultModel == "RandomWalk" || defaultModel == "RandomWalk2d")
             {
-                InstallRandomWalkMobility(ueNode);
-                randomWalkCount++;
-            }
-            else if (defaultModel == "Static" || defaultModel == "ConstantPosition")
-            {
-                Ptr<MobilityModel> currentMob = ueNode->GetObject<MobilityModel>();
-                Vector currentPos = currentMob ? currentMob->GetPosition() : Vector(0, 0, 1.5);
-                InstallStaticMobility(ueNode, currentPos);
+                Ptr<MobilityModel> mob = ueNode->GetObject<MobilityModel>();
+                NS_ABORT_MSG_IF(mob == nullptr, "No mobility model on UE " << ueId);
                 staticCount++;
             }
             else
@@ -143,6 +141,7 @@ NrMobilityManager::InstallUeMobility(const NodeContainer& ueNodes)
                 InstallRandomWalkMobility(ueNode);
                 randomWalkCount++;
             }
+            
         }
     }
 

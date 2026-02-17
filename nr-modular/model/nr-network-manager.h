@@ -25,6 +25,8 @@
 #include "ns3/ipv4-interface-container.h"
 #include "ns3/ipv4-address.h"
 #include "ns3/cc-bwp-helper.h"
+#include "ns3/nr-ue-net-device.h"
+
 
 #include <vector>
 #include <map>
@@ -394,6 +396,13 @@ public:
      * \return Container of UE net devices
      */
     NetDeviceContainer GetUeDevices() const;
+
+    /**
+     * \brief Get a specific UE NetDevice by index
+     * \param ueId The index (0-based) of the UE
+     * \return Pointer to the NrUeNetDevice
+     */
+    Ptr<NrUeNetDevice> GetUeDevice(uint32_t ueId) const; 
     
     /**
      * \brief Get NR helper
@@ -405,6 +414,53 @@ public:
      * \return Pointer to NR helper
      */
     Ptr<NrHelper> GetNrHelper() const;
+    
+    /**
+     * \brief Get number of BWPs configured
+     * \return Number of bandwidth parts
+     */
+    uint32_t GetNumBwps() const;
+
+    /**
+     * \brief Get all BWPs
+     * \return Vector of bandwidth part information
+     */
+    BandwidthPartInfoPtrVector GetAllBwps() const;
+    
+    // ========================================================================
+    // UE IDENTIFIER MAPPING (for MILP Scheduler)
+    // ========================================================================
+    
+    /**
+     * \brief Get RNTI for a specific UE
+     * \param ueId UE index (0-based, e.g., 0, 1, 2)
+     * \return RNTI assigned to this UE
+     * 
+     * RNTI (Radio Network Temporary Identifier) is assigned by gNB during attachment.
+     * This method provides direct access to the RNTI stored in NrUeMac.
+     * 
+     * Example:
+     * \code
+     *   uint16_t rnti = netMgr->GetUeRnti(0);  // Get RNTI for UE 0
+     * \endcode
+     * 
+     * Note: Accesses BWP 0 (single BWP scenario)
+     */
+    uint16_t GetUeRnti(uint32_t ueId) const;
+    
+    /**
+     * \brief Get UE ID from RNTI (reverse lookup)
+     * \param rnti RNTI value
+     * \return UE ID (0-based index)
+     * 
+     * Example:
+     * \code
+     *   uint32_t ueId = netMgr->GetUeIdFromRnti(rnti);
+     * \endcode
+     * 
+     * Complexity: O(N) where N = number of UEs
+     */
+    uint32_t GetUeIdFromRnti(uint16_t rnti) const;
     
     // ========================================================================
     // STATE QUERIES

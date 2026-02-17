@@ -22,6 +22,11 @@
 #include "nr-metrics-manager.h"
 #include "nr-output-manager.h"
 
+// MILP Integration
+#include "nr-bwp-manager.h"
+#include "nr-milp-interface.h"
+#include "nr-milp-executor-scheduler.h"
+
 #include "ns3/nr-helper.h"
 #include "ns3/cc-bwp-helper.h"
 
@@ -97,7 +102,8 @@ class NrSimulationManager : public Object
     Ptr<NrMetricsManager> GetMetricsManager() const;
     Ptr<NrOutputManager> GetOutputManager() const;
     Ptr<NrSimConfig> GetConfig() const;
-    
+    Ptr<NrBwpManager> GetBwpManager() const;
+
     /**
      * @brief Get the NrHelper
      * @return Pointer to NrHelper (null if not initialized)
@@ -129,10 +135,18 @@ class NrSimulationManager : public Object
     void CreateManagers();
     
     /**
-     * @brief Setup NR infrastructure (helper, bands)
+     * @brief Setup MILP-based scheduler (if enabled in config)
+     * 
+     * This method:
+     * 1. Creates MILP Interface for solver communication
+     * 2. Builds and solves the MILP problem
+     * 3. Loads solution into BWP Manager
+     * 4. Creates and installs MILP Executor Scheduler
+     * 
+     * Called during Initialize() after network setup.
      */
-    void SetupNrInfrastructure();
-
+    void SetupMilpScheduler();
+    
     // Configuration
     std::string m_configPath;
     Ptr<NrSimConfig> m_config;
@@ -151,9 +165,17 @@ class NrSimulationManager : public Object
     Ptr<NrConfigManager> m_configManager;
     Ptr<NrOutputManager> m_outputManager;
     
+    // MILP Components
+    Ptr<NrBwpManager> m_bwpManager;
+    Ptr<NrMilpInterface> m_milpInterface;
+    Ptr<NrMilpExecutorScheduler> m_milpScheduler;
+    
     // NR infrastructure
     Ptr<NrHelper> m_nrHelper;
     OperationBandInfo m_operationBand;
+
+    // Timing
+    std::chrono::high_resolution_clock::time_point m_wallClockStart;
 };
 
 } // namespace ns3

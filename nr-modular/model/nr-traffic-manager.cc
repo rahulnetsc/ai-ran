@@ -23,6 +23,7 @@
 
 #include <sstream>
 #include <iostream>
+#include <iomanip>   // std::setprecision, std::fixed
 
 namespace ns3
 {
@@ -114,7 +115,7 @@ NrTrafficManager::NrTrafficManager()
       m_networkManager(nullptr),
       m_enableRealTimeMonitoring(false),
       m_monitoringInterval(1.0),
-      m_trafficStartTime(3.0),  // ADD THIS
+      m_trafficStartTime(0.0),  // Set properly in InstallTraffic() from config
       m_lastSampleTime(Seconds(0)),  // ADD THIS
       m_installed(false),
       m_metricsCollected(false),
@@ -250,8 +251,14 @@ NrTrafficManager::InstallTraffic(const NodeContainer& gnbNodes,
     
     uint16_t dlPort = 10000;
     uint16_t ulPort = 20000;
-    double startTime = 3.0;  // Increased delay to ensure attachment
+    // Read startTime from config; fall back to 0.5s (safe minimum after RRC attach ~20ms)
+    double startTime = (m_config->traffic.startTime > 0.0)
+                        ? m_config->traffic.startTime
+                        : 0.5;
     double stopTime = m_config->simDuration;
+    NS_ABORT_MSG_IF(stopTime <= startTime + 0.5,
+        "simDuration (" << stopTime << "s) must be > startTime+0.5s (" 
+        << (startTime + 0.5) << "s). Increase simDuration in config.");
 
     // DOWNLINK: Remote → UEs
     std::cout << "  Phase 1: Installing downlink flows..." << std::endl;
@@ -314,7 +321,7 @@ NrTrafficManager::InstallTraffic(const NodeContainer& gnbNodes,
         m_clientApps.Add(m_ulClientApps.Get(i));
 
 
-    m_trafficStartTime = startTime;  // Set to 3.0
+    m_trafficStartTime = startTime;  // Set from config (traffic.startTime)
 
     // Initialize metrics map
     for (uint32_t i = 0; i < ueNodes.GetN(); ++i)
@@ -363,8 +370,7 @@ NrTrafficManager::InstallTraffic(const NodeContainer& gnbNodes,
     if (!m_config->logTraffic)
     {
         std::cout << "\nTraffic logging disabled in config. Skipping tracing setup." << std::endl;
-        m_installed = true;
-        return;
+        return;  // m_installed already set to true above
     }
     else
     {
@@ -456,8 +462,12 @@ NrTrafficManager::CollectPacketSinkStats()
     std::cout << "Processing PacketSink statistics..." << std::endl;
     
     // Calculate actual traffic duration
-    // m_trafficDuration = m_config->simDuration - 3.5;  // Apps start at 3.5s
-    m_trafficDuration = m_config->simDuration - m_trafficStartTime;
+    // Sources start at (m_trafficStartTime + 0.5s), sinks start at m_trafficStartTime.
+    // Use source start time as the actual traffic begin point.
+    m_trafficDuration = m_config->simDuration - (m_trafficStartTime + 0.5);
+    NS_ABORT_MSG_IF(m_trafficDuration <= 0,
+        "trafficDuration <= 0! simDuration=" << m_config->simDuration 
+        << " startTime=" << m_trafficStartTime << ". Increase simDuration.");
 
     
     std::cout << "  Traffic duration: " << m_trafficDuration << " seconds" << std::endl;
@@ -894,6 +904,12 @@ bool
 NrTrafficManager::IsInstalled() const
 {
     return m_installed;
+}
+
+bool
+NrTrafficManager::IsCollected() const
+{
+    return m_metricsCollected;
 }
 
 } // namespace ns3

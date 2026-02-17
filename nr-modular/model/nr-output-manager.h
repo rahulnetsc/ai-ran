@@ -38,6 +38,7 @@ class NrTrafficManager;
 class NrMetricsManager;
 class NrChannelManager;
 class NrMobilityManager;
+// class NrBwpManager;
 
 /**
  * \ingroup nr-modular
@@ -98,8 +99,10 @@ public:
                     Ptr<NrTrafficManager> traffic,
                     Ptr<NrMetricsManager> metrics,
                     Ptr<NrChannelManager> channel = nullptr,
-                    Ptr<NrMobilityManager> mobility = nullptr);
-
+                    Ptr<NrMobilityManager> mobility = nullptr
+                    // Ptr<NrBwpManager> bwp = nullptr
+                    );
+        
     // ================================================================
     // TRADITIONAL FILE OUTPUT (PHASE 1 - CURRENT)
     // ================================================================
@@ -228,6 +231,12 @@ public:
             double dlLossPct;
             double ulLossPct;
             double avgDelayMs;
+
+            // BWP assignment (bandwidth part)
+            uint32_t currentBwpId;
+            double bwpCenterFrequencyHz;
+            double bwpBandwidthHz;
+            uint32_t bwpNumerology;
             
             // Buffer status (if available)
             bool hasBufferMetrics;
@@ -280,6 +289,36 @@ public:
             std::string reason;
         };
         std::deque<HandoverEvent> recentHandovers;
+
+        // BWP Configuration (static - sent once or with every state)
+        struct BwpConfigInfo
+        {
+            uint32_t bwpId;
+            double centerFrequencyHz;
+            double bandwidthHz;
+            double frequencyStartHz;
+            double frequencyEndHz;
+            uint32_t numerology;
+            double subcarrierSpacingKhz;
+            uint32_t numResourceBlocks;
+            std::string description;
+            std::string colorHex;
+        };
+
+        struct BwpConfiguration
+        {
+            uint32_t numBwps;
+            std::vector<BwpConfigInfo> bwps;
+        };
+
+        struct BwpStats
+        {
+            std::vector<uint32_t> ueCountPerBwp;
+            std::map<uint32_t, uint32_t> assignments;  // ueId → bwpId
+        };
+
+        BwpConfiguration bwpConfiguration;
+        BwpStats bwpStats;
         
         // Event log (circular buffer)
         struct SimulationEvent
@@ -291,6 +330,7 @@ public:
         };
         std::deque<SimulationEvent> recentEvents;
     };
+
 
     /**
      * \brief Collect current simulation state
@@ -304,6 +344,16 @@ public:
      * \return Vector of historical states
      */
     std::vector<SimulationState> GetStateHistory(uint32_t count = 0);
+
+    /**
+     * \brief Collect BWP configuration (static info)
+     */
+    void CollectBwpConfiguration(SimulationState& state);
+
+    /**
+     * \brief Collect BWP statistics (dynamic assignments)
+     */
+    void CollectBwpStats(SimulationState& state);
 
     // ================================================================
     // OUTPUT FORMATTING
@@ -562,6 +612,7 @@ private:
     Ptr<NrMetricsManager> m_metricsManager;
     Ptr<NrChannelManager> m_channelManager;
     Ptr<NrMobilityManager> m_mobilityManager;
+    // Ptr<NrBwpManager> m_bwpManager;
 
     // Telemetry state
     bool m_telemetryEnabled;                ///< Is telemetry active
@@ -593,6 +644,9 @@ private:
     uint64_t m_failedPublishCount;          ///< Count of failed publishes
     std::vector<double> m_stateGenTimes;    ///< State generation times
     std::vector<uint64_t> m_jsonSizes;      ///< JSON sizes
+
+    // BWP tracking
+    bool m_bwpConfigurationSent;  ///< True if static BWP config already sent
 
     // Timing
     Time m_simulationStartTime;             ///< Wall clock time at sim start

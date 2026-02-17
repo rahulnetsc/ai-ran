@@ -385,8 +385,10 @@ NrSimConfig::ParseMonitoring(const json& j)
 
     if (j.contains("monitorInterval"))
         monitoring.monitorInterval = j["monitorInterval"].get<double>();
-
-    NS_LOG_INFO("Monitoring config parsed: interval=" << monitoring.monitorInterval << " seconds");
+    if (j.contains("enableExternalControl"))
+        monitoring.enableExternalControl = j["enableExternalControl"].get<bool>();
+    NS_LOG_INFO("Monitoring config parsed: interval=" << monitoring.monitorInterval << " seconds"
+                 << ", enableExternalControl=" << (monitoring.enableExternalControl ? "true" : "false") << ")");
 }
 
 void

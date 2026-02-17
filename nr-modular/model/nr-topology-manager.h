@@ -90,13 +90,13 @@ class NrTopologyManager : public Object
      * @brief Get gNB positions
      * @return Vector of gNB positions
      */
-    std::vector<Vector> GetGnbPositions() const;
+    const std::vector<Vector>& GetGnbPositions() const;
 
     /**
      * @brief Get UE positions
      * @return Vector of UE positions
      */
-    std::vector<Vector> GetUePositions() const;
+    const std::vector<Vector>& GetUePositions() const;
 
   protected:
     void DoDispose() override;
